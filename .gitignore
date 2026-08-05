@@ -1,0 +1,43 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.env
+
+# Testing & notebooks
+.pytest_cache/
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+*.Zone.Identifier
+
+# Generated data & indexes (large / reproducible)
+data/chroma_db/
+data/bm25_store/
+data/logs/
+data/raw/*.pdf
+data/ground-truth-retrieval.csv
+data/llm_eval_results.json
+
+# Local model downloads (if any)
+models/
+*.bin
+*.safetensors
+
+# AI assistant / dev tools
+.agents/
