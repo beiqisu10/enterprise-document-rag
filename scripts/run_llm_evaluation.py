@@ -48,19 +48,7 @@ def main():
             name="strict_k5",
             prompt_version="strict",
             top_k=5,
-        ),
-        # # Comparison 2: less context
-        # LLMConfig(
-        #     name="basic_k3",
-        #     prompt_version="basic",
-        #     top_k=3,
-        # ),
-        # # Comparison 3: more context
-        # LLMConfig(
-        #     name="basic_k8",
-        #     prompt_version="basic",
-        #     top_k=8,
-        # ),
+        )
     ]
 
     evaluator = LLMEvaluator(

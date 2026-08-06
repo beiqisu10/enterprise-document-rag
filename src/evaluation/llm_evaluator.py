@@ -54,15 +54,12 @@ class LLMEvaluator:
 
         elif version == "strict":
             prompt = build_prompt(query=query, documents=docs)
-            prompt["system"] = """
-You are an enterprise knowledge assistant.
-
-Rules:
-1. Answer ONLY using the provided context.
-2. If the answer is not found in the context, say: "I don't know."
-3. Do not use external knowledge.
-4. Cite every factual statement using references: [1], [2], etc.
-""".strip()
+            original_system = prompt.get("system", "")
+            prompt["system"] = original_system + "\n\nAdditional guidelines:\n" + """
+        - Base your answer solely on the provided documents.
+        - If the documents do not contain sufficient information, clearly state that the answer is not found.
+        - Cite key factual claims using [1], [2], etc. Citation is encouraged but not required for every single sentence.
+        """.strip()
             return prompt
 
         else:

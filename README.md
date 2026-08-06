@@ -1,6 +1,6 @@
 # Enterprise Document RAG
 
-# Problem Statement
+## Problem Statement
 
 Enterprise documents often contain large amounts of unstructured information, making it difficult for users to quickly find accurate answers.
 
@@ -8,7 +8,7 @@ Traditional keyword-based search can miss the semantic meaning behind user quest
 
 This project solves this problem by building an AI-powered document question answering system that combines semantic search, keyword retrieval, and reranking to provide accurate, grounded answers with relevant document citations.
 
-# Overview
+## Overview
 
 An enterprise-oriented Retrieval-Augmented Generation (RAG) system for question answering over large document collections.
 
@@ -18,7 +18,7 @@ It also includes retrieval evaluation, LLM-as-a-Judge evaluation, monitoring das
 
 ---
 
-# Architecture
+## Architecture
 
 ```
                     PDF Documents
@@ -52,7 +52,7 @@ It also includes retrieval evaluation, LLM-as-a-Judge evaluation, monitoring das
 
 ---
 
-# Features
+## Features
 
 - Automated PDF ingestion pipeline
 - Recursive document chunking
@@ -70,7 +70,7 @@ It also includes retrieval evaluation, LLM-as-a-Judge evaluation, monitoring das
 
 ---
 
-# Tech Stack
+## Tech Stack
 
 | Category | Technology |
 |-----------|------------|
@@ -87,7 +87,7 @@ It also includes retrieval evaluation, LLM-as-a-Judge evaluation, monitoring das
 
 ---
 
-# Requirements
+## Requirements
 
 - Python 3.13+
 - OpenAI API Key
@@ -119,10 +119,10 @@ OPENAI_API_KEY=your_openai_api_key
 
 ## Ingest Documents
 
-Build the vector index and BM25 index.
+Before starting the application, build the vector database and BM25 index from the source documents.
 
 ```bash
-uv run python scripts/ingest_documents.py
+uv run python -m scripts.ingest_documents
 ```
 
 ---
@@ -204,7 +204,7 @@ The Streamlit interface provides:
 ![chat](./assets/screenshots/chat.png)
 ---
 
-# Monitoring
+## Monitoring
 
 Every query is automatically logged.
 
@@ -231,33 +231,68 @@ The dashboard visualizes:
 ![feedback_logs](./assets/screenshots/feedback_logs.png)
 ---
 
-# Evaluation
+## Evaluation
+```
+PDF Documents
+      |
+      v
+generate_ground_truth.py
+      |
+      v
+ground_truth.json/csv
+      |
+      +----------------+
+      |                |
+      v                v
+Retrieval Evaluation   LLM Evaluation
+```
+### Ground Truth Generation
 
-## Retrieval Evaluation
+Generate evaluation questions from the document collection.
 
-Metrics:
-
-- Hit Rate@K
-- Mean Reciprocal Rank (MRR)
-- NDCG@K
-
-Results on 300 ground-truth questions:
-| Method                | Hit Rate\@5 | MRR\@5     | NDCG\@5    |
-| --------------------- | ----------- | ---------- | ---------- |
-| Vector Only           | 0.8833      | 0.7489     | 0.7849     |
-| Keyword Only          | 0.8433      | 0.7458     | 0.7728     |
-| Hybrid (RRF)          | 0.9167      | 0.8106     | 0.8382     |
-| **Hybrid + Reranker** | **0.9367**  | **0.8570** | **0.8792** |
+This step creates ground-truth questions used for retrieval and LLM evaluation.
 
 Run:
 
 ```bash
-python scripts/test_retrieval.py
+uv run python -m scripts.generate_ground_truth
+```
+
+### Retrieval Evaluation
+
+Evaluated on **300 test queries** (`k=5`):
+
+#### 1. Accuracy Metrics
+
+| Retrieval Method | Hit Rate@5 | MRR@5 | Precision@5 | Status |
+| :--- | :---: | :---: | :---: | :---: |
+| Vector Only | 0.8767 | 0.7483 | 0.1753 | |
+| Keyword Only | 0.8867 | 0.7707 | 0.1773 | |
+| Hybrid (RRF) | 0.9133 | 0.8177 | 0.1827 | |
+| **Hybrid + Reranker** | **0.9733** | **0.8948** | **0.1947** | 🏆 **Best Quality** |
+
+#### 2. Latency & Throughput Benchmark
+
+| Retrieval Method | Total Time (300 Qs) | Average Latency | Throughput (QPS) |
+| :--- | :---: | :---: | :---: |
+| **Keyword Only** | **00:04** | **~13.3 ms** | **65.01 it/s** ⚡ |
+| Vector Only | 01:46 | ~353 ms | 2.83 it/s |
+| Hybrid (RRF) | 02:01 | ~403 ms | 2.47 it/s |
+| Hybrid + Reranker | 12:58 | ~2590 ms | 0.39 it/s (2.59s/it) |
+
+> **Engineering Trade-off Insights:**
+> - **`Hybrid + Reranker`** yields the highest accuracy (+6% Hit Rate over Hybrid), but adds ~2.2s latency per query due to cross-encoder reranking overhead.
+> - **`Hybrid (RRF)`** offers the optimal balance between response speed (~400ms) and retrieval quality (91.3% Hit Rate) for latency-sensitive applications.
+
+Run:
+
+```bash
+uv run python -m scripts.run_retrieval_evaluation
 ```
 
 ---
 
-## LLM Evaluation
+### LLM Evaluation
 
 Answers are evaluated using GPT-4o-mini as an LLM Judge.
 
@@ -270,34 +305,36 @@ Evaluation dimensions:
 - Hallucination
 
 Results on 30 ground-truth questions:
-| Config         | Correctness | Faithfulness | Hallucination | Citation | Overall  |
-| -------------- | ----------- | ------------ | ------------- | -------- | -------- |
-| basic\_k5      | 4.70        | 4.70         | 6.67%         | 4.77     | 4.73     |
-| **strict\_k5** | **4.97**    | **4.97**     | **0.00%**     | **4.97** | **4.97** |
+| Config | Correctness | Faithfulness | Hallucination | Citation | Helpfulness | Overall |
+| ------- | ----------- | ------------ | ------------- | -------- | ----------- | ------- |
+| **basic_k5** | **4.87** | **4.87** | **3.33%** | **4.87** | **4.93** | **4.87** |
+| strict_k5 | 4.87 | 4.80 | 6.67% | 4.80 | 4.90 | 4.84 |
+
+>The evaluation selected `basic_k5` as the best-performing configuration with an overall score of 4.87/5.
 
 Run:
 
 ```bash
-python scripts/test_llm_evaluator.py
+uv run python -m scripts.run_llm_evaluation
 ```
 
 ---
 
-# Design Decisions
+## Design Decisions
 
-## Hybrid Retrieval
+### Hybrid Retrieval
 Dense retrieval provides semantic understanding while BM25 improves exact keyword matching.
 RRF combines both approaches without requiring score normalization.
 
-## Reranking
+### Reranking
 A Cross Encoder reranker is applied after retrieval because it provides higher accuracy while avoiding the cost of scoring the entire corpus.
 
-## Vector Database
+### Vector Database
 ChromaDB was selected for local development due to simplicity and support for persistent vector storage.
 
 ---
 
-# Project Structure
+## Project Structure
 
 ```
 src/
@@ -331,7 +368,7 @@ data/
 
 ---
 
-# Testing
+## Testing
 
 ```bash
 pytest
@@ -339,7 +376,7 @@ pytest
 
 ---
 
-# Future Improvements
+## Future Improvements
 
 - Multi-document upload
 - Authentication
@@ -351,7 +388,7 @@ pytest
 
 ---
 
-# Productionisation
+## Productionisation
 
 The current ingestion workflow is implemented as a Python pipeline.
 In production, this can be orchestrated using Airflow or Prefect with:
@@ -364,6 +401,6 @@ In production, this can be orchestrated using Airflow or Prefect with:
 
 ---
 
-# License
+## License
 
 MIT

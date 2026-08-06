@@ -2,6 +2,7 @@
 Streamlit UI for Enterprise Document RAG.
 """
 
+import os
 import hashlib
 import requests
 import streamlit as st
@@ -9,7 +10,7 @@ import streamlit as st
 from src.frontend.dashboard import render_dashboard
 from src.frontend.feedback import get_feedback, save_feedback
 
-API_URL = st.secrets.get("API_URL") or "http://localhost:8000/query"
+API_URL = os.getenv("API_URL", "http://localhost:8000/query")
 
 
 def _feedback_widget_key(prefix: str, question: str, answer: str) -> str:
