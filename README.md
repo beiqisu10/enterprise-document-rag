@@ -96,10 +96,9 @@ It also includes retrieval evaluation, LLM-as-a-Judge evaluation, monitoring das
 
 ## Installation
 
-Clone the repository:
+Clone this repository (or download the project), then run:
 
 ```bash
-git clone <repository-url>
 cd enterprise-document-rag
 ```
 
@@ -113,6 +112,22 @@ Create a `.env` file in the project root:
 
 ```env
 OPENAI_API_KEY=your_openai_api_key
+```
+
+---
+
+## Prepare Documents
+
+The repository does not include source PDF documents.
+
+Download the AWS Well-Architected Framework PDF from the official AWS documentation:
+
+https://docs.aws.amazon.com/wellarchitected/latest/framework/wellarchitected-framework.pdf
+
+Place the downloaded file at:
+```
+data/raw/
+└── wellarchitected-framework.pdf
 ```
 
 ---
